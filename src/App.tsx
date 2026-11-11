@@ -1,3 +1,29 @@
+/**
+ * ============================================================================
+ * COMPONENTE RAIZ: App.tsx (Orquestrador Principal da Aplicação EduCad)
+ * ============================================================================
+ * 
+ * Este arquivo atua como o maestro da interface do sistema, sendo responsável por:
+ * 
+ * 1. Portal de Autenticação (Gatekeeper):
+ *    - Se o usuário NÃO estiver logado (`!isAuthenticated`), renderiza imediatamente
+ *      a tela de Login/Cadastro (`LoginScreen`), cumprindo a diretriz de segurança.
+ * 
+ * 2. Roteamento por Abas de Navegação:
+ *    - Quando autenticado, gerencia a alternância dinâmica entre as telas:
+ *      * 'dashboard': Visão geral com métricas e ocupação de vagas
+ *      * 'students': Cadastro, busca e gerenciamento de alunos (RF01, RF02, RF05, RF06)
+ *      * 'classes': Gerenciamento de turmas, turnos e chamada (RF03, RF09)
+ *      * 'enrollments': Matrículas, enturmação e cancelamentos (RF04, RF07, RF10)
+ * 
+ * 3. Centralização de Diálogos Modais:
+ *    - Mantém os estados de abertura/fechamento e os registros em edição de forma limpa,
+ *      evitando duplicação de modais na árvore de renderização do React.
+ * 
+ * 4. Feedback Acessível (Toasts):
+ *    - Renderiza o `ToastContainer` globalmente para exibir notificações sem recarregar a tela.
+ */
+
 import React, { useState } from 'react';
 import { useSchool } from './context/SchoolContext';
 import { Navbar } from './components/common/Navbar';
@@ -17,64 +43,87 @@ import { Student, ClassRoom, Enrollment } from './types';
 import { ShieldCheck, GraduationCap } from 'lucide-react';
 
 export const App: React.FC = () => {
+  // Consumimos o estado de autenticação e a busca do comprovante pelo contexto
   const { getEnrollmentReceiptData, isAuthenticated } = useSchool();
+  
+  // Aba atualmente selecionada pelo usuário
   const [currentTab, setCurrentTab] = useState<'dashboard' | 'students' | 'classes' | 'enrollments'>('dashboard');
 
-  // Modals state
+  // ==========================================================================
+  // ESTADOS DOS DIÁLOGOS MODAIS (Abertura e dados sob manipulação)
+  // ==========================================================================
+  
+  // Modal de Cadastro / Edição de Aluno (RF01/RF02)
   const [isStudentFormOpen, setIsStudentFormOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
 
+  // Modal de Dossiê / Detalhes do Aluno (RF06)
   const [isStudentDetailOpen, setIsStudentDetailOpen] = useState(false);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
 
+  // Modal de Criação / Edição de Turma (RF03)
   const [isClassFormOpen, setIsClassFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassRoom | null>(null);
 
+  // Modal de Lista de Presença da Turma (RF09)
   const [isClassStudentsOpen, setIsClassStudentsOpen] = useState(false);
   const [viewingClass, setViewingClass] = useState<ClassRoom | null>(null);
 
+  // Modal de Efetivação de Matrícula (RF04)
   const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
   const [enrollmentTargetStudent, setEnrollmentTargetStudent] = useState<Student | null>(null);
 
+  // Modal de Exibição / Impressão do Comprovante Oficial (RF07)
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<{ enrollment: Enrollment; student: Student; classRoom: ClassRoom } | null>(null);
 
-  // Handlers
+  // ==========================================================================
+  // DISPARADORES E HANDLERS DE AÇÕES
+  // ==========================================================================
+  
+  // Abre o formulário limpo para cadastrar um novo aluno
   const handleOpenNewStudent = () => {
     setEditingStudent(null);
     setIsStudentFormOpen(true);
   };
 
+  // Abre o formulário pré-preenchido para editar um aluno existente
   const handleOpenEditStudent = (student: Student) => {
     setEditingStudent(student);
     setIsStudentFormOpen(true);
   };
 
+  // Abre a visualização em detalhes do aluno
   const handleOpenStudentDetail = (student: Student) => {
     setViewingStudent(student);
     setIsStudentDetailOpen(true);
   };
 
+  // Abre o modal de matrícula, opcionalmente pré-selecionando um estudante
   const handleOpenEnrollStudent = (student?: Student | null) => {
     setEnrollmentTargetStudent(student || null);
     setIsEnrollmentModalOpen(true);
   };
 
+  // Abre o formulário limpo para criar uma nova turma
   const handleOpenNewClass = () => {
     setEditingClass(null);
     setIsClassFormOpen(true);
   };
 
+  // Abre o formulário pré-preenchido para alterar capacidade/turno de uma turma
   const handleOpenEditClass = (c: ClassRoom) => {
     setEditingClass(c);
     setIsClassFormOpen(true);
   };
 
+  // Abre a lista oficial de estudantes matriculados em uma turma específica (RF09)
   const handleOpenClassStudents = (c: ClassRoom) => {
     setViewingClass(c);
     setIsClassStudentsOpen(true);
   };
 
+  // Busca os dados da matrícula e abre o comprovante oficial para visualização/PDF
   const handleOpenReceipt = (enrollmentId: string) => {
     const data = getEnrollmentReceiptData(enrollmentId);
     if (data) {
@@ -83,11 +132,14 @@ export const App: React.FC = () => {
     }
   };
 
+  // Ao concluir uma matrícula com sucesso, abre o comprovante automaticamente (RF07)
   const handleEnrollmentSuccess = (enrollment: Enrollment) => {
-    // Open receipt right after successful enrollment
     handleOpenReceipt(enrollment.id);
   };
 
+  // ==========================================================================
+  // GUARDIÃO DE AUTENTICAÇÃO: Se não autenticado, exibe Tela de Login
+  // ==========================================================================
   if (!isAuthenticated) {
     return (
       <>
@@ -97,13 +149,16 @@ export const App: React.FC = () => {
     );
   }
 
+  // ==========================================================================
+  // ÁREA LOGADA: Interface completa com Menu, Abas e Modais
+  // ==========================================================================
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
       
-      {/* Top Navbar */}
+      {/* Barra de Navegação Superior */}
       <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-      {/* Main View Container */}
+      {/* Conteúdo Dinâmico com base na aba ativa */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {currentTab === 'dashboard' && (
           <DashboardOverview
@@ -141,7 +196,7 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Footer */}
+      {/* Rodapé Institucional com avisos de LGPD e Acessibilidade */}
       <footer className="border-t border-slate-200/80 bg-white py-6 mt-auto text-xs text-slate-500 no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -164,19 +219,24 @@ export const App: React.FC = () => {
         </div>
       </footer>
 
-      {/* Global Modals */}
+      {/* ====================================================================
+          MODAIS GLOBAIS CONTROLADOS PELO APP
+         ==================================================================== */}
+      
+      {/* Modal: Formulário de Aluno (RF01/RF02) */}
       <StudentFormModal
         isOpen={isStudentFormOpen}
         onClose={() => setIsStudentFormOpen(false)}
         studentToEdit={editingStudent}
         onSuccess={(student) => {
-          // If editing active student in details modal, keep in sync
+          // Mantém sincronizada a visualização detalhada caso o modal de detalhes esteja aberto
           if (viewingStudent && viewingStudent.id === student.id) {
             setViewingStudent(student);
           }
         }}
       />
 
+      {/* Modal: Dossiê Detalhado do Estudante (RF06) */}
       <StudentDetailModal
         isOpen={isStudentDetailOpen}
         onClose={() => setIsStudentDetailOpen(false)}
@@ -186,12 +246,14 @@ export const App: React.FC = () => {
         onViewReceipt={handleOpenReceipt}
       />
 
+      {/* Modal: Formulário de Turma (RF03) */}
       <ClassFormModal
         isOpen={isClassFormOpen}
         onClose={() => setIsClassFormOpen(false)}
         classToEdit={editingClass}
       />
 
+      {/* Modal: Diário / Lista de Presença da Turma (RF09) */}
       <ClassStudentsModal
         isOpen={isClassStudentsOpen}
         onClose={() => setIsClassStudentsOpen(false)}
@@ -199,6 +261,7 @@ export const App: React.FC = () => {
         onSelectStudent={handleOpenStudentDetail}
       />
 
+      {/* Modal: Matrícula & Enturmação (RF04) */}
       <EnrollmentModal
         isOpen={isEnrollmentModalOpen}
         onClose={() => setIsEnrollmentModalOpen(false)}
@@ -206,16 +269,18 @@ export const App: React.FC = () => {
         onEnrollmentSuccess={handleEnrollmentSuccess}
       />
 
+      {/* Modal: Comprovante Oficial de Matrícula (RF07) */}
       <EnrollmentReceiptModal
         isOpen={isReceiptModalOpen}
         onClose={() => setIsReceiptModalOpen(false)}
         data={receiptData}
       />
 
-      {/* Live Toast Container */}
+      {/* Central de Toasts de Notificação */}
       <ToastContainer />
 
     </div>
   );
 };
+
 export default App;

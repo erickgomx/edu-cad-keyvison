@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/components/classes/ClassFormModal.tsx
+ * 
+ * OBJETIVO:
+ * Modal com formulário para cadastro e edição de Turmas Escolares (RF03).
+ * 
+ * CAMPOS E REGRAS:
+ * - Nome da Turma / Série (ex: "1º Ano A - Ensino Médio")
+ * - Ano Letivo (ex: "2026")
+ * - Turno (Matutino, Vespertino, Noturno ou Integral)
+ * - Sala física ou laboratório
+ * - Capacidade máxima de alunos (RN03 - limite físico de segurança e conforto)
+ * ============================================================================
+ */
+
 import React, { useState, useEffect } from 'react';
 import { ClassRoom, ShiftType } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
@@ -16,6 +33,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 }) => {
   const { addClass, updateClass } = useSchool();
 
+  // Estados dos campos do formulário
   const [name, setName] = useState('');
   const [academicYear, setAcademicYear] = useState('2026');
   const [shift, setShift] = useState<ShiftType>('Matutino');
@@ -24,6 +42,9 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  /**
+   * Popula o formulário se estiver em modo de edição ou limpa se for nova turma
+   */
   useEffect(() => {
     if (classToEdit) {
       setName(classToEdit.name);
@@ -45,6 +66,9 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
 
   if (!isOpen) return null;
 
+  /**
+   * Validação dos campos da turma
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
@@ -85,7 +109,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
     >
       <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8">
         
-        {/* Header */}
+        {/* Cabeçalho do Modal */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-brand-600 rounded-lg text-white">
@@ -109,8 +133,10 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
           </button>
         </div>
 
-        {/* Form */}
+        {/* Formulário */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          
+          {/* Nome da Turma */}
           <div>
             <label htmlFor="class-name" className="block text-xs font-semibold text-slate-700 mb-1">
               Nome da Turma / Série *
@@ -130,6 +156,8 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            {/* Ano Letivo */}
             <div>
               <label htmlFor="class-year" className="block text-xs font-semibold text-slate-700 mb-1">
                 Ano Letivo *
@@ -145,6 +173,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
               />
             </div>
 
+            {/* Turno */}
             <div>
               <label htmlFor="class-shift" className="block text-xs font-semibold text-slate-700 mb-1">
                 Turno *
@@ -162,6 +191,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
               </select>
             </div>
 
+            {/* Sala de Aula */}
             <div>
               <label htmlFor="class-room" className="block text-xs font-semibold text-slate-700 mb-1">
                 Sala / Local de Aula *
@@ -180,6 +210,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
               {errors.room && <p className="text-xs text-rose-600 mt-1">{errors.room}</p>}
             </div>
 
+            {/* Capacidade Máxima (RN03) */}
             <div>
               <label htmlFor="class-cap" className="block text-xs font-semibold text-slate-700 mb-1">
                 Capacidade Máxima de Alunos (RN03) *
@@ -198,6 +229,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
             </div>
           </div>
 
+          {/* Descrição Pedagógica */}
           <div>
             <label htmlFor="class-desc" className="block text-xs font-semibold text-slate-700 mb-1">
               Descrição / Observações da Turma
@@ -212,6 +244,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({
             />
           </div>
 
+          {/* Botões do Rodapé */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
             <button
               type="button"

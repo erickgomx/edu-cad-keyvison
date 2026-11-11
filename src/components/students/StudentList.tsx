@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/components/students/StudentList.tsx
+ * 
+ * OBJETIVO:
+ * Exibição, busca, filtragem e gerenciamento de alunos cadastrados.
+ * 
+ * REQUISITOS ATENDIDOS:
+ * - RF01: Acesso ao formulário de novo cadastro (ou pré-cadastro pelo aluno).
+ * - RF05: Edição de dados e exclusão com segurança.
+ * - RF06: Busca em tempo real por Nome, CPF ou Matrícula acadêmica.
+ * - RF07: Acesso direto ao Comprovante Oficial de Matrícula em PDF.
+ * - RN04: Apenas Secretaria / Admin tem permissão de exclusão (botão de lixeira restrito).
+ * ============================================================================
+ */
+
 import React, { useState, useMemo } from 'react';
 import { Student } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
@@ -32,10 +49,14 @@ export const StudentList: React.FC<StudentListProps> = ({
 }) => {
   const { students, deleteStudent, getActiveEnrollmentByStudent, getClassById, currentUser } = useSchool();
 
-  // Search filter (RF06: buscar por nome, CPF ou matrícula)
+  // Estados de busca e filtros rápidos (RF06)
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'enrolled' | 'not_enrolled' | 'minor' | 'adult'>('all');
 
+  /**
+   * Filtragem em memória memoizada para alta performance e resposta instantânea (< 100ms)
+   * Busca por nome parcial, número de matrícula ou CPF (com ou sem pontuação).
+   */
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
       const term = searchTerm.toLowerCase().trim();
@@ -62,6 +83,9 @@ export const StudentList: React.FC<StudentListProps> = ({
     });
   }, [students, searchTerm, statusFilter, getActiveEnrollmentByStudent]);
 
+  /**
+   * Confirmação segura de exclusão (Apenas Secretaria - RN04)
+   */
   const handleDelete = (student: Student) => {
     if (window.confirm(`Tem certeza que deseja excluir o cadastro de ${student.name}? Esta ação não pode ser desfeita.`)) {
       deleteStudent(student.id);
@@ -71,7 +95,7 @@ export const StudentList: React.FC<StudentListProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* Top Controls: Title & Actions */}
+      {/* Cabeçalho da Seção com Título e Botão de Ação */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -82,7 +106,8 @@ export const StudentList: React.FC<StudentListProps> = ({
           </p>
         </div>
 
-        {currentUser.role === 'admin' && (
+        {/* Botão de Cadastro: Secretaria realiza cadastro total, Aluno realiza pré-cadastro */}
+        {currentUser.role === 'admin' ? (
           <button
             onClick={onNewStudent}
             className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold shadow-sm shadow-brand-500/20 transition-all cursor-pointer shrink-0"
@@ -90,13 +115,22 @@ export const StudentList: React.FC<StudentListProps> = ({
             <UserPlus className="w-4 h-4" />
             <span>Novo Aluno (RF01)</span>
           </button>
-        )}
+        ) : currentUser.role === 'aluno' ? (
+          <button
+            onClick={onNewStudent}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold shadow-sm shadow-purple-500/20 transition-all cursor-pointer shrink-0"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Realizar Pré-Cadastro (RF01)</span>
+          </button>
+        ) : null}
       </div>
 
-      {/* Filter and Search Bar (RF06) */}
+      {/* Barra de Busca e Filtros Rápidos (RF06) */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex flex-col md:flex-row gap-3">
-          {/* Input de busca */}
+          
+          {/* Input de Busca com Ícone e Botão de Limpar */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -117,7 +151,7 @@ export const StudentList: React.FC<StudentListProps> = ({
             )}
           </div>
 
-          {/* Filtros Rápidos */}
+          {/* Filtros Rápidos em Abas Horizontais */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
             <button
               onClick={() => setStatusFilter('all')}
@@ -163,7 +197,7 @@ export const StudentList: React.FC<StudentListProps> = ({
         </div>
       </div>
 
-      {/* Table / Cards */}
+      {/* Tabela de Listagem de Alunos */}
       {filteredStudents.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
@@ -171,7 +205,7 @@ export const StudentList: React.FC<StudentListProps> = ({
           </div>
           <h3 className="text-base font-bold text-slate-800">Nenhum aluno encontrado</h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-            Não encontramos nenhum estudante correspondente aos filtros selecionados.
+            Não encontramos nenhum estudante correspondente aos filtros pesquisados.
           </p>
           {searchTerm && (
             <button
@@ -205,7 +239,7 @@ export const StudentList: React.FC<StudentListProps> = ({
                   return (
                     <tr key={student.id} className="hover:bg-slate-50/60 transition-colors">
                       
-                      {/* Name & Registration */}
+                      {/* Nome e Matrícula Acadêmica */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 font-bold flex items-center justify-center text-xs shrink-0 border border-brand-100">
@@ -225,7 +259,7 @@ export const StudentList: React.FC<StudentListProps> = ({
                         </div>
                       </td>
 
-                      {/* CPF & Age */}
+                      {/* CPF e Idade (com destaque para menor de idade) */}
                       <td className="px-5 py-4">
                         <span className="font-mono text-xs text-slate-700 block">{student.cpf}</span>
                         <span className="text-xs text-slate-500">
@@ -233,13 +267,13 @@ export const StudentList: React.FC<StudentListProps> = ({
                         </span>
                       </td>
 
-                      {/* Contact */}
+                      {/* Dados de Contato */}
                       <td className="px-5 py-4">
                         <span className="text-xs text-slate-800 block truncate max-w-[180px]">{student.email}</span>
                         <span className="text-xs text-slate-500 block">{student.phone}</span>
                       </td>
 
-                      {/* Enrollment status */}
+                      {/* Status da Enturmação */}
                       <td className="px-5 py-4">
                         {activeEnrollment && enrolledClass ? (
                           <div>
@@ -259,11 +293,11 @@ export const StudentList: React.FC<StudentListProps> = ({
                         )}
                       </td>
 
-                      {/* Actions */}
+                      {/* Botões de Ações Rápidas */}
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           
-                          {/* Visualizar Ficha */}
+                          {/* Visualizar Ficha Cadastral Completa */}
                           <button
                             onClick={() => onSelectStudent(student)}
                             className="p-1.5 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
@@ -273,7 +307,7 @@ export const StudentList: React.FC<StudentListProps> = ({
                             <Eye className="w-4 h-4" />
                           </button>
 
-                          {/* Matricular (se não tiver turma) ou Ver comprovante */}
+                          {/* Se tiver matrícula, visualiza comprovante; se não, botão de matricular (apenas admin) */}
                           {activeEnrollment ? (
                             <button
                               onClick={() => onViewReceipt(activeEnrollment.id)}
@@ -296,7 +330,7 @@ export const StudentList: React.FC<StudentListProps> = ({
                             )
                           )}
 
-                          {/* Editar (RF05) */}
+                          {/* Editar Cadastro (RF05) */}
                           {currentUser.role === 'admin' && (
                             <button
                               onClick={() => onEditStudent(student)}
@@ -308,7 +342,7 @@ export const StudentList: React.FC<StudentListProps> = ({
                             </button>
                           )}
 
-                          {/* Excluir (RF05 & RN04: Apenas Administrador/Secretaria) */}
+                          {/* Excluir Aluno (RF05 & RN04: Apenas Administrador/Secretaria) */}
                           {currentUser.role === 'admin' && (
                             <button
                               onClick={() => handleDelete(student)}

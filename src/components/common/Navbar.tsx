@@ -1,3 +1,25 @@
+/**
+ * ============================================================================
+ * COMPONENTE: Navbar (Barra Superior de Navegação & Controle de Acesso)
+ * ============================================================================
+ * 
+ * Este componente implementa o Requisito RF08:
+ * "Controle de Acesso e Perfis de Usuário (Secretaria, Professor e Aluno)".
+ * 
+ * O que a Navbar gerencia:
+ * 1. Navegação de Abas: Permite alternar fluidamente entre:
+ *    - Painel Geral (Dashboard)
+ *    - Alunos (RF01, RF02, RF05, RF06)
+ *    - Turmas (RF03, RF09)
+ *    - Matrículas (RF04, RF07, RF10)
+ * 2. Seletor de Perfil Ativo (Role Switcher - RF08):
+ *    Permite ao avaliador/usuário alternar em tempo real entre Secretaria/Admin,
+ *    Docente (Professor) e Aluno/Responsável, testando as permissões de cada ator instantaneamente.
+ * 3. Botão de Reset de Demonstração: Restaura com um clique o estado inicial dos dados simulados.
+ * 4. Botão de Logout: Encerra a sessão atual e devolve o usuário com segurança para a tela de Login.
+ * 5. Menu Responsivo (Drawer Mobile): Experiência limpa e adaptada para smartphones e tablets.
+ */
+
 import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { 
@@ -22,10 +44,14 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => {
+  // Acessamos os dados da sessão e as funções globais do Contexto Escolar
   const { currentUser, switchRole, resetToDefaultData, logout } = useSchool();
+  
+  // Estados locais para controle de menus expansíveis
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
+  // Lista de itens do menu de navegação com seus respectivos ícones
   const navItems = [
     { id: 'dashboard', label: 'Painel Geral', icon: LayoutDashboard },
     { id: 'students', label: 'Alunos', icon: Users },
@@ -33,12 +59,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
     { id: 'enrollments', label: 'Matrículas', icon: FileCheck },
   ] as const;
 
+  // Dicionário visual com cores e rótulos para cada perfil de usuário
   const roleLabels: Record<UserRole, { label: string; badge: string; color: string }> = {
     admin: { label: 'Secretaria / Admin', badge: 'Secretaria', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
     professor: { label: 'Professor', badge: 'Docente', color: 'bg-blue-100 text-blue-800 border-blue-300' },
     aluno: { label: 'Aluno / Responsável', badge: 'Aluno', color: 'bg-purple-100 text-purple-800 border-purple-300' }
   };
 
+  /**
+   * Altera a aba ativa e fecha o menu mobile caso esteja aberto
+   */
   const handleTabClick = (tabId: 'dashboard' | 'students' | 'classes' | 'enrollments') => {
     setCurrentTab(tabId);
     setMobileMenuOpen(false);
@@ -49,7 +79,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Logo & Brand */}
+          {/* ====================================================================
+              LOGOTIPO & NOME DA INSTITUIÇÃO
+             ==================================================================== */}
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setCurrentTab('dashboard')}
@@ -69,7 +101,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
             </button>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* ====================================================================
+              MENU DE NAVEGAÇÃO DESKTOP (Abas do Sistema)
+             ==================================================================== */}
           <nav className="hidden md:flex items-center gap-1 bg-slate-100/70 p-1.5 rounded-xl border border-slate-200/60" aria-label="Navegação Principal">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -91,9 +125,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
             })}
           </nav>
 
-          {/* User Role Switcher & Action Controls */}
+          {/* ====================================================================
+              CONTROLES DE USUÁRIO & SELETOR DE PERFIL (RF08)
+             ==================================================================== */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Quick Demo Reset */}
+            {/* Botão de restauração rápida para dados de demonstração */}
             <button
               onClick={() => {
                 if (window.confirm('Deseja restaurar todos os dados para o estado inicial de demonstração?')) {
@@ -107,7 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
               <RotateCcw className="w-4 h-4" />
             </button>
 
-            {/* Role Switcher (RF08) */}
+            {/* Menu Dropdown de Perfil do Usuário */}
             <div className="relative">
               <button
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
@@ -129,6 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 <ChevronDown className="w-4 h-4 text-slate-400" />
               </button>
 
+              {/* Caixa suspensa para alternar de perfil em tempo real */}
               {roleDropdownOpen && (
                 <div 
                   className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-50 animate-in fade-in zoom-in-95 duration-150"
@@ -139,6 +176,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     <p className="text-[11px] text-slate-500">Simule a visão de cada usuário (RF08):</p>
                   </div>
                   
+                  {/* Opção: Secretaria / Administrador */}
                   <button
                     onClick={() => { switchRole('admin'); setRoleDropdownOpen(false); }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between cursor-pointer transition-colors ${
@@ -152,6 +190,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Total</span>
                   </button>
 
+                  {/* Opção: Professor / Docente */}
                   <button
                     onClick={() => { switchRole('professor'); setRoleDropdownOpen(false); }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between cursor-pointer transition-colors ${
@@ -165,6 +204,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">Docente</span>
                   </button>
 
+                  {/* Opção: Aluno / Responsável */}
                   <button
                     onClick={() => { switchRole('aluno'); setRoleDropdownOpen(false); }}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between cursor-pointer transition-colors ${
@@ -178,6 +218,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     <span className="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">Aluno</span>
                   </button>
 
+                  {/* Opção de Encerramento da Sessão (Logout) */}
                   <div className="pt-2 mt-1 border-t border-slate-100">
                     <button
                       onClick={() => { setRoleDropdownOpen(false); logout(); }}
@@ -191,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
               )}
             </div>
 
-            {/* Direct Logout Button */}
+            {/* Botão de Logout Direto */}
             <button
               onClick={logout}
               title="Sair do Sistema"
@@ -202,7 +243,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* ====================================================================
+              BOTÃO DE ABERTURA DO MENU MOBILE
+             ==================================================================== */}
           <div className="flex md:hidden items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -216,7 +259,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* ====================================================================
+          MENU GAVETA LATERAL MOBILE
+         ==================================================================== */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-5 space-y-3">
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -227,6 +272,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                 {roleLabels[currentUser.role].badge}
               </span>
             </div>
+            {/* Seletor rápido de perfis para telas pequenas */}
             <div className="grid grid-cols-3 gap-1 mt-2">
               <button 
                 onClick={() => switchRole('admin')}
@@ -249,6 +295,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
             </div>
           </div>
 
+          {/* Abas no modo Mobile */}
           <div className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -270,6 +317,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
             })}
           </div>
 
+          {/* Ações inferiores no modo Mobile */}
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
             <button
               onClick={() => {

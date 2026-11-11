@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/components/classes/ClassStudentsModal.tsx
+ * 
+ * OBJETIVO:
+ * Visualização e impressão da Relação Nominal de Alunos por Turma (RF09).
+ * Permite que a Secretaria e o Professor consultem quem está enturmado em cada sala,
+ * com contagem de vagas ocupadas e opção de imprimir como Lista de Chamada / Presença.
+ * ============================================================================
+ */
+
 import React from 'react';
 import { ClassRoom, Student } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
@@ -25,9 +37,13 @@ export const ClassStudentsModal: React.FC<ClassStudentsModalProps> = ({
 
   if (!isOpen || !classRoom) return null;
 
+  // Busca os alunos matriculados ativos nesta turma específica
   const enrolledStudents = getStudentsByClass(classRoom.id);
   const enrolledCount = getClassEnrolledCount(classRoom.id);
 
+  /**
+   * Aciona a impressão nativa do navegador utilizando os estilos definidos em `@media print`
+   */
   const handlePrint = () => {
     window.print();
   };
@@ -40,7 +56,7 @@ export const ClassStudentsModal: React.FC<ClassStudentsModalProps> = ({
     >
       <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8">
         
-        {/* Header */}
+        {/* Cabeçalho do Modal (Oculto durante a impressão) */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white no-print">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-brand-600 rounded-lg text-white">
@@ -73,10 +89,10 @@ export const ClassStudentsModal: React.FC<ClassStudentsModalProps> = ({
           </div>
         </div>
 
-        {/* Printable List */}
+        {/* Conteúdo Imprimível */}
         <div className="p-6 sm:p-8 receipt-card">
           
-          {/* Header for print & display */}
+          {/* Cabeçalho da Lista para Exibição e Impressão */}
           <div className="border-b border-slate-200 pb-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -95,7 +111,7 @@ export const ClassStudentsModal: React.FC<ClassStudentsModalProps> = ({
             </div>
           </div>
 
-          {/* Table of students */}
+          {/* Tabela de Alunos Enturmados */}
           {enrolledStudents.length === 0 ? (
             <div className="text-center py-12 bg-slate-50 rounded-xl border border-slate-200">
               <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
@@ -171,7 +187,7 @@ export const ClassStudentsModal: React.FC<ClassStudentsModalProps> = ({
             </div>
           )}
 
-          {/* Footer for Attendance Signature in Print */}
+          {/* Rodapé com Campo de Assinatura (Exibido apenas na impressão) */}
           <div className="mt-8 pt-6 border-t border-slate-200 hidden print:block">
             <div className="flex justify-between items-end text-xs text-slate-700">
               <div>
@@ -187,7 +203,7 @@ export const ClassStudentsModal: React.FC<ClassStudentsModalProps> = ({
 
         </div>
 
-        {/* Footer Actions */}
+        {/* Rodapé com Botão Fechar */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 no-print">
           <button
             onClick={onClose}

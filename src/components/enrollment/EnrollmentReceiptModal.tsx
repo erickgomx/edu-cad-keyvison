@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * COMPONENTE: EnrollmentReceiptModal (Comprovante Oficial de Matrícula - RF07)
+ * ============================================================================
+ * 
+ * Este componente implementa o Requisito Funcional RF07:
+ * "Geração de Comprovante de Matrícula".
+ * 
+ * O que ele faz:
+ * 1. Exibe uma via visual e formal do comprovante com cabeçalho institucional,
+ *    código único de autenticação digital, dados completos do aluno,
+ *    dados do responsável legal (se menor de idade - RN05) e dados da turma (RF04).
+ * 2. Suporta impressão direta e exportação para PDF via `window.print()`,
+ *    com regras CSS `@media print` para ocultar botões e exibir apenas o comprovante limpo.
+ * 3. Incorpora aviso de conformidade com a LGPD (Lei Geral de Proteção de Dados - RNF07).
+ */
+
 import React from 'react';
 import { Enrollment, Student, ClassRoom } from '../../types';
 import { 
@@ -11,6 +28,12 @@ import {
 } from 'lucide-react';
 import { calculateAge } from '../../utils/validators';
 
+/**
+ * Propriedades esperadas pelo modal do comprovante:
+ * - isOpen: indica se o modal está visível
+ * - onClose: callback para fechar a janela
+ * - data: pacote contendo a matrícula realizada, o aluno matriculado e a turma vinculada
+ */
 interface EnrollmentReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -26,11 +49,19 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
   onClose,
   data,
 }) => {
+  // Se o modal não estiver aberto ou não houver dados, não renderiza nada no DOM
   if (!isOpen || !data) return null;
 
+  // Desestruturamos as informações do pacote de matrícula
   const { enrollment, student, classRoom } = data;
+
+  // Calculamos a idade atual do estudante a partir de sua data de nascimento
   const age = calculateAge(student.birthDate);
 
+  /**
+   * Aciona o diálogo nativo do navegador para impressão ou gravação em PDF.
+   * As classes com `.no-print` são automaticamente omitidas pelo CSS global.
+   */
   const handlePrint = () => {
     window.print();
   };
@@ -44,7 +75,9 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
     >
       <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 my-8 overflow-hidden">
         
-        {/* Modal Top Actions (Hidden on Print) */}
+        {/* ====================================================================
+            BARRA DE AÇÕES DO MODAL (Ocultada na Impressão via classe 'no-print')
+           ==================================================================== */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white no-print">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
@@ -71,10 +104,12 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
           </div>
         </div>
 
-        {/* Printable Voucher Content */}
+        {/* ====================================================================
+            CONTEÚDO IMPRESSO DO COMPROVANTE (Folha Oficial)
+           ==================================================================== */}
         <div className="p-8 sm:p-10 receipt-card bg-white text-slate-900">
           
-          {/* Header Escola */}
+          {/* Cabeçalho Oficial da Instituição de Ensino */}
           <div className="border-b-2 border-slate-900 pb-6 mb-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -94,6 +129,7 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
                 </div>
               </div>
 
+              {/* Status e Ano Letivo */}
               <div className="text-right shrink-0">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
                   <CheckCircle className="w-3.5 h-3.5" />
@@ -103,6 +139,7 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
               </div>
             </div>
 
+            {/* Código Único de Validação e Timestamp da Matrícula */}
             <div className="mt-4 bg-slate-100 p-3 rounded-lg flex flex-wrap items-center justify-between gap-2 border border-slate-200">
               <div className="text-xs">
                 <span className="text-slate-500 font-medium">Código de Autenticação da Matrícula:</span>{' '}
@@ -116,7 +153,7 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
             </div>
           </div>
 
-          {/* Dados do Aluno */}
+          {/* Seção 1: Dados do Aluno */}
           <div className="mb-6">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-1 mb-3">
               1. Identificação do Aluno
@@ -154,7 +191,7 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
             </div>
           </div>
 
-          {/* Dados do Responsável (se houver ou se menor de idade) */}
+          {/* Seção 2: Dados do Responsável Legal (Obrigatório se aluno < 18 anos conforme RN05) */}
           {student.guardian && (
             <div className="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200 pb-1 mb-3">
@@ -185,7 +222,7 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
             </div>
           )}
 
-          {/* Dados da Turma / Matrícula */}
+          {/* Seção 3: Dados da Turma / Enturmação (RF04) */}
           <div className="mb-8">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-1 mb-3">
               3. Dados da Turma e Enturmação (RF04)
@@ -210,7 +247,7 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
             </div>
           </div>
 
-          {/* Autenticação & Assinaturas */}
+          {/* Seção 4: Autenticação Digital & Assinaturas Oficiais */}
           <div className="pt-6 border-t-2 border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="p-2 border border-slate-300 rounded-lg bg-slate-50">
@@ -229,14 +266,16 @@ export const EnrollmentReceiptModal: React.FC<EnrollmentReceiptModalProps> = ({
             </div>
           </div>
 
-          {/* LGPD Notice */}
+          {/* Aviso Legal de Privacidade de Dados (LGPD - RNF07) */}
           <div className="mt-8 text-[10px] text-slate-400 text-center border-t border-slate-100 pt-3">
             Conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018 - RNF07), os dados contidos neste comprovante destinam-se exclusivamente para fins acadêmicos e administrativos escolares.
           </div>
 
         </div>
 
-        {/* Modal Bottom Actions (Hidden on Print) */}
+        {/* ====================================================================
+            BARRA DE AÇÕES INFERIOR DO MODAL (Ocultada na Impressão via 'no-print')
+           ==================================================================== */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 no-print">
           <button
             onClick={onClose}

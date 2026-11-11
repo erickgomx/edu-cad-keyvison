@@ -1,3 +1,19 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/components/students/StudentDetailModal.tsx
+ * 
+ * OBJETIVO:
+ * Exibição detalhada da Ficha Individual do Estudante (Ficha Cadastral Escolar).
+ * Permite ao usuário (Secretaria, Professor ou o próprio Aluno):
+ * - Visualizar dados civis, endereço e observações médicas.
+ * - Consultar os dados do Responsável Legal (RN05).
+ * - Acompanhar o status da matrícula no ano letivo corrente.
+ * - Acessar diretamente o Comprovante Oficial de Matrícula (RF07) ou iniciar
+ *   a enturmação (RF04) caso o aluno ainda esteja sem turma.
+ * ============================================================================
+ */
+
 import React from 'react';
 import { Student } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
@@ -32,6 +48,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
   if (!isOpen || !student) return null;
 
+  // Cálculo de idade e busca de matrícula ativa
   const age = calculateAge(student.birthDate);
   const activeEnrollment = getActiveEnrollmentByStudent(student.id);
   const currentClass = activeEnrollment ? getClassById(activeEnrollment.classRoomId) : null;
@@ -44,7 +61,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     >
       <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8">
         
-        {/* Header */}
+        {/* Cabeçalho com Nome e Matrícula */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-lg">
@@ -68,10 +85,10 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
+        {/* Conteúdo da Ficha */}
         <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           
-          {/* Status da Matrícula Card */}
+          {/* Card em Destaque: Situação da Matrícula */}
           <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
             activeEnrollment
               ? 'bg-emerald-50/70 border-emerald-200'
@@ -127,7 +144,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Dados Pessoais */}
+          {/* Seção 1: Dados Pessoais */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-1 mb-3">
               Informações Pessoais
@@ -158,7 +175,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Endereço */}
+          {/* Seção 2: Endereço Residencial */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-1 mb-3">
               Endereço Residencial
@@ -169,7 +186,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             </p>
           </div>
 
-          {/* Responsável Legal (RN05) */}
+          {/* Seção 3: Responsável Legal Vinculado (RN05) */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-1 mb-3">
               Responsável Legal Vinculado
@@ -204,7 +221,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
             )}
           </div>
 
-          {/* Observações */}
+          {/* Observações Adicionais */}
           {student.notes && (
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-200 pb-1 mb-2">
@@ -218,7 +235,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
         </div>
 
-        {/* Footer */}
+        {/* Rodapé com Ações */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
           <span className="text-[11px] text-slate-400">EduCad • Ficha Cadastral</span>
           <div className="flex items-center gap-2">

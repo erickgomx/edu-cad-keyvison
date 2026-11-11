@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/components/classes/ClassList.tsx
+ * 
+ * OBJETIVO:
+ * Painel de gerenciamento visual de Turmas e Salas de Aula (RF03).
+ * 
+ * DESTAQUES E REGRAS:
+ * - Filtro dinâmico por turnos (Matutino, Vespertino, Noturno, Integral).
+ * - Monitoramento de Capacidade Máxima (RN03): exibe barra de progresso colorida
+ *   (verde para vagas livres, âmbar para alerta e vermelho para turma lotada).
+ * - RF09: Botão "Ver Alunos" que abre a relação nominal de alunos enturmados.
+ * - Edição e exclusão seguras restritas à Secretaria.
+ * ============================================================================
+ */
+
 import React, { useState } from 'react';
 import { ClassRoom } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
@@ -27,6 +44,7 @@ export const ClassList: React.FC<ClassListProps> = ({
   const { classes, getClassEnrolledCount, deleteClass, currentUser } = useSchool();
   const [shiftFilter, setShiftFilter] = useState<string>('all');
 
+  // Filtragem de turmas por turno
   const filteredClasses = classes.filter((c) => {
     if (shiftFilter === 'all') return true;
     return c.shift === shiftFilter;
@@ -38,6 +56,9 @@ export const ClassList: React.FC<ClassListProps> = ({
     }
   };
 
+  /**
+   * Cores temáticas para distinguir visualmente cada turno escolar
+   */
   const getShiftBadge = (shift: ClassRoom['shift']) => {
     switch (shift) {
       case 'Matutino':
@@ -56,7 +77,7 @@ export const ClassList: React.FC<ClassListProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* Header */}
+      {/* Cabeçalho da Seção */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -67,6 +88,7 @@ export const ClassList: React.FC<ClassListProps> = ({
           </p>
         </div>
 
+        {/* Apenas Secretaria / Admin pode criar novas turmas */}
         {currentUser.role === 'admin' && (
           <button
             onClick={onNewClass}
@@ -78,7 +100,7 @@ export const ClassList: React.FC<ClassListProps> = ({
         )}
       </div>
 
-      {/* Filter Tabs */}
+      {/* Abas de Filtro por Turno */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {['all', 'Matutino', 'Vespertino', 'Integral', 'Noturno'].map((shift) => (
           <button
@@ -95,7 +117,7 @@ export const ClassList: React.FC<ClassListProps> = ({
         ))}
       </div>
 
-      {/* Grid of Class Cards */}
+      {/* Grid de Cards de Turmas */}
       {filteredClasses.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
           <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
@@ -112,6 +134,7 @@ export const ClassList: React.FC<ClassListProps> = ({
             const availableSeats = Math.max(0, classRoom.maxCapacity - enrolled);
             const isFull = availableSeats === 0;
 
+            // Altera dinamicamente a cor da barra de ocupação
             let progressColor = 'bg-emerald-500';
             if (percentage >= 90) progressColor = 'bg-rose-500';
             else if (percentage >= 70) progressColor = 'bg-amber-500';
@@ -122,6 +145,7 @@ export const ClassList: React.FC<ClassListProps> = ({
                 className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md transition-all p-5 flex flex-col justify-between"
               >
                 <div>
+                  {/* Topo do Card: Nome da Turma e Badge de Lotação */}
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border mb-2 ${getShiftBadge(classRoom.shift)}`}>
@@ -158,7 +182,7 @@ export const ClassList: React.FC<ClassListProps> = ({
                     </p>
                   )}
 
-                  {/* Room & Capacity details */}
+                  {/* Espaço Físico e Capacidade Máxima */}
                   <div className="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-3 text-xs">
                     <div className="flex items-center gap-1.5 text-slate-600">
                       <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
@@ -170,7 +194,7 @@ export const ClassList: React.FC<ClassListProps> = ({
                     </div>
                   </div>
 
-                  {/* Capacity Bar */}
+                  {/* Barra Visual de Ocupação da Turma (RN03) */}
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-xs mb-1.5">
                       <span className="font-semibold text-slate-700">Ocupação da Turma</span>
@@ -187,7 +211,7 @@ export const ClassList: React.FC<ClassListProps> = ({
                   </div>
                 </div>
 
-                {/* Card Actions */}
+                {/* Ações da Turma: Ver Alunos (RF09), Editar e Excluir */}
                 <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
                   <button
                     onClick={() => onViewClassStudents(classRoom)}

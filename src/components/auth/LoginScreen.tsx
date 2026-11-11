@@ -1,3 +1,19 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/components/auth/LoginScreen.tsx
+ * 
+ * OBJETIVO:
+ * Tela inicial obrigatória da aplicação (RF08).
+ * Apresenta:
+ * 1. Formulário de Login moderno e responsivo com validação de campos.
+ * 2. Aba "Cadastre-se" para criação de novas contas com persistência no LocalStorage.
+ * 3. Seção "Acesso Rápido para Demonstração (1 Clique)" com os 3 perfis pré-configurados
+ *    (Secretaria/Admin, Professor e Aluno/Responsável), facilitando a vida do avaliador.
+ * 4. Avisos de segurança e conformidade com a LGPD (RNF07).
+ * ============================================================================
+ */
+
 import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { 
@@ -16,12 +32,13 @@ import {
 import { UserRole } from '../../types';
 
 export const LoginScreen: React.FC = () => {
+  // Consumo das funções de autenticação vindas do Contexto Escolar
   const { login, registerUser, users } = useSchool();
   
-  // Mode: Login or Register
+  // Estado para alternar entre Modo Login (false) e Modo Cadastro de Nova Conta (true)
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
-  // Form states
+  // Estados dos campos do formulário
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,16 +46,20 @@ export const LoginScreen: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole>('aluno');
   const [lgpdConsent, setLgpdConsent] = useState(true);
 
-  // UI states
+  // Estados visuais de interface
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  /**
+   * Processamento do envio do formulário de Login tradicional
+   */
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
+    // Validações básicas de preenchimento
     if (!email.trim()) {
       setErrorMessage('Informe o seu e-mail cadastrado.');
       return;
@@ -49,6 +70,7 @@ export const LoginScreen: React.FC = () => {
     }
 
     setIsLoading(true);
+    // Simula um pequeno atraso de autenticação para efeito de feedback visual
     setTimeout(() => {
       const res = login(email, password);
       setIsLoading(false);
@@ -58,10 +80,14 @@ export const LoginScreen: React.FC = () => {
     }, 350);
   };
 
+  /**
+   * Processamento do envio do formulário de Criação de Conta
+   */
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
+    // Validações dos campos de registro
     if (!name.trim()) {
       setErrorMessage('Informe seu nome completo.');
       return;
@@ -98,6 +124,9 @@ export const LoginScreen: React.FC = () => {
     }, 400);
   };
 
+  /**
+   * Atalho de 1 clique para preenchimento e login automático como um dos atores
+   */
   const handleQuickLogin = (role: UserRole) => {
     const targetUser = users.find((u) => u.role === role);
     if (!targetUser) return;
@@ -113,6 +142,9 @@ export const LoginScreen: React.FC = () => {
     }, 300);
   };
 
+  /**
+   * Alterna entre a visão de Login e Cadastro limpando mensagens de erro
+   */
   const toggleMode = (register: boolean) => {
     setIsRegisterMode(register);
     setErrorMessage(null);
@@ -123,12 +155,13 @@ export const LoginScreen: React.FC = () => {
   return (
     <div className="min-h-screen w-full flex flex-col justify-center bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 text-slate-100 py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       
-      {/* Subtle background glow */}
+      {/* Efeito de iluminação suave de fundo (Design System moderno) */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
+      {/* Cabeçalho de Identidade Visual da Escola */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10 mb-6">
         
-        {/* Brand Logo */}
+        {/* Logotipo EduCad */}
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-xl shadow-brand-500/30 mb-3 animate-in fade-in zoom-in-90 duration-300">
           <GraduationCap className="w-10 h-10" />
         </div>
@@ -146,11 +179,11 @@ export const LoginScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Card */}
+      {/* Card Principal de Autenticação */}
       <div className="sm:mx-auto sm:w-full sm:max-w-lg relative z-10">
         <div className="bg-white text-slate-900 rounded-3xl shadow-2xl border border-slate-100 p-7 sm:p-9 space-y-5">
           
-          {/* Card Header & Toggle Tabs */}
+          {/* Cabeçalho do Card com seletor de abas: Login vs Cadastre-se */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">
@@ -163,7 +196,7 @@ export const LoginScreen: React.FC = () => {
               </p>
             </div>
 
-            {/* Switch Tab buttons */}
+            {/* Alternador de abas */}
             <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-semibold">
               <button
                 type="button"
@@ -190,17 +223,20 @@ export const LoginScreen: React.FC = () => {
             </div>
           </div>
 
+          {/* Mensagem de Erro de Validação */}
           {errorMessage && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-center gap-2">
               <span className="font-semibold">{errorMessage}</span>
             </div>
           )}
 
-          {/* Form: Register Mode */}
+          {/* ============================================================== */}
+          {/* MODO 1: FORMULÁRIO DE CADASTRO DE NOVO USUÁRIO                  */}
+          {/* ============================================================== */}
           {isRegisterMode ? (
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
               
-              {/* Name */}
+              {/* Nome Completo */}
               <div>
                 <label htmlFor="reg-name" className="block text-xs font-semibold text-slate-700 mb-1">
                   Nome Completo *
@@ -219,7 +255,7 @@ export const LoginScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Email */}
+              {/* E-mail */}
               <div>
                 <label htmlFor="reg-email" className="block text-xs font-semibold text-slate-700 mb-1">
                   E-mail *
@@ -238,10 +274,10 @@ export const LoginScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Role selection */}
+              {/* Perfil de Acesso */}
               <div>
                 <label htmlFor="reg-role" className="block text-xs font-semibold text-slate-700 mb-1">
-                  Perfil de Acesso *
+                  Perfil de Acesso Desejado *
                 </label>
                 <select
                   id="reg-role"
@@ -255,7 +291,7 @@ export const LoginScreen: React.FC = () => {
                 </select>
               </div>
 
-              {/* Password & Confirm Password */}
+              {/* Senha e Confirmação de Senha */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="reg-pass" className="block text-xs font-semibold text-slate-700 mb-1">
@@ -294,7 +330,7 @@ export const LoginScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* LGPD Consent */}
+              {/* Consentimento LGPD (RNF07) */}
               <div className="pt-1">
                 <label className="flex items-start gap-2 cursor-pointer text-xs text-slate-600">
                   <input
@@ -307,7 +343,7 @@ export const LoginScreen: React.FC = () => {
                 </label>
               </div>
 
-              {/* Submit button */}
+              {/* Botão de Envio de Cadastro */}
               <button
                 type="submit"
                 disabled={isLoading}
@@ -338,10 +374,12 @@ export const LoginScreen: React.FC = () => {
 
             </form>
           ) : (
-            /* Form: Login Mode */
+            /* ============================================================== */
+            /* MODO 2: FORMULÁRIO DE LOGIN TRADICIONAL                         */
+            /* ============================================================== */
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               
-              {/* Email field */}
+              {/* E-mail de Login */}
               <div>
                 <label htmlFor="login-email" className="block text-xs font-semibold text-slate-700 mb-1">
                   E-mail Cadastrado *
@@ -360,7 +398,7 @@ export const LoginScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Password field */}
+              {/* Senha */}
               <div>
                 <label htmlFor="login-password" className="block text-xs font-semibold text-slate-700 mb-1">
                   Senha de Acesso *
@@ -387,7 +425,7 @@ export const LoginScreen: React.FC = () => {
                 </div>
               </div>
 
-              {/* Options */}
+              {/* Opções de Login */}
               <div className="flex items-center justify-between text-xs pt-1">
                 <label className="flex items-center gap-2 cursor-pointer text-slate-600">
                   <input
@@ -408,7 +446,7 @@ export const LoginScreen: React.FC = () => {
                 </button>
               </div>
 
-              {/* Submit button */}
+              {/* Botão de Envio de Login */}
               <button
                 type="submit"
                 disabled={isLoading}
@@ -439,7 +477,9 @@ export const LoginScreen: React.FC = () => {
             </form>
           )}
 
-          {/* Quick Demo Access Buttons (Acesso Rápido para Avaliação) */}
+          {/* ============================================================== */}
+          {/* SEÇÃO PEDAGÓGICA: ACESSO RÁPIDO PARA AVALIADORES (1 CLIQUE)     */}
+          {/* ============================================================== */}
           <div className="pt-4 border-t border-slate-200">
             <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -448,7 +488,7 @@ export const LoginScreen: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               
-              {/* Secretaria */}
+              {/* Botão 1: Secretaria */}
               <button
                 type="button"
                 onClick={() => handleQuickLogin('admin')}
@@ -464,7 +504,7 @@ export const LoginScreen: React.FC = () => {
                 <p className="text-[10px] text-slate-500">Acesso Total (Admin)</p>
               </button>
 
-              {/* Professor */}
+              {/* Botão 2: Professor */}
               <button
                 type="button"
                 onClick={() => handleQuickLogin('professor')}
@@ -480,7 +520,7 @@ export const LoginScreen: React.FC = () => {
                 <p className="text-[10px] text-slate-500">Consulta de Turmas</p>
               </button>
 
-              {/* Aluno */}
+              {/* Botão 3: Aluna */}
               <button
                 type="button"
                 onClick={() => handleQuickLogin('aluno')}
@@ -499,7 +539,7 @@ export const LoginScreen: React.FC = () => {
             </div>
           </div>
 
-          {/* LGPD notice */}
+          {/* Aviso Legal de Privacidade */}
           <div className="pt-2 text-center text-[10px] text-slate-400 leading-tight">
             🔐 Seus dados estão protegidos de acordo com os princípios da LGPD (Lei 13.709/2018 - RNF07).
           </div>
@@ -507,7 +547,7 @@ export const LoginScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer info */}
+      {/* Rodapé da Tela de Login */}
       <div className="mt-8 text-center text-xs text-slate-400 relative z-10">
         EduCad • Sistema Escolar Funcional • Front-end
       </div>

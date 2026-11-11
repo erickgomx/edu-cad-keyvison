@@ -1,5 +1,24 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/utils/mockData.ts
+ * 
+ * OBJETIVO:
+ * Fornecer uma base de dados inicial (Seed / Mock Data) realista para a demonstração
+ * do sistema. Permite que o professor ou avaliador teste imediatamente todas as
+ * funcionalidades (busca, visualização por turma, emissão de comprovantes e perfis)
+ * sem precisar começar com o sistema totalmente vazio.
+ * ============================================================================
+ */
+
 import { ClassRoom, Student, Enrollment, User } from '../types';
 
+/**
+ * 1. USUÁRIOS DE DEMONSTRAÇÃO (RF08 - Acesso por Perfis):
+ * - Secretaria: perfil administrador com poder total (cadastra, edita, matricula, exclui).
+ * - Professor: visualiza turmas e listas de chamada.
+ * - Aluno: consulta seus dados cadastrais e visualiza o comprovante de matrícula.
+ */
 export const INITIAL_USERS: User[] = [
   {
     id: 'user-admin',
@@ -28,6 +47,11 @@ export const INITIAL_USERS: User[] = [
   }
 ];
 
+/**
+ * 2. TURMAS INICIAIS (RF03 / RN03):
+ * Turmas com diferentes turnos, salas e capacidades máximas para demonstrar
+ * os indicadores visuais de lotação e o bloqueio de capacidade.
+ */
 export const INITIAL_CLASSES: ClassRoom[] = [
   {
     id: 'class-1',
@@ -67,13 +91,18 @@ export const INITIAL_CLASSES: ClassRoom[] = [
   }
 ];
 
+/**
+ * 3. ALUNOS CADASTRADOS (RF01 / RF02 / RN01 / RN05):
+ * Exemplos com alunos menores de 18 anos (com responsável obrigatório)
+ * e maiores de 18 anos, todos com CPFs matematicamente válidos.
+ */
 export const INITIAL_STUDENTS: Student[] = [
   {
     id: 'student-1',
     registrationNumber: '2026-1001',
     name: 'Mariana Duarte da Silva',
     cpf: '824.912.040-02',
-    birthDate: '2009-04-15', // 17 anos (Menor de idade)
+    birthDate: '2009-04-15', // Aluna menor de 18 anos -> Exige Responsável (RN05)
     gender: 'Feminino',
     phone: '(81) 98765-4321',
     email: 'mariana.duarte@email.com',
@@ -101,7 +130,7 @@ export const INITIAL_STUDENTS: Student[] = [
     registrationNumber: '2026-1002',
     name: 'Lucas Gabriel Albuquerque',
     cpf: '123.456.789-09',
-    birthDate: '2007-08-20', // Maior de 18 anos
+    birthDate: '2007-08-20', // Aluno maior de 18 anos -> Responsável opcional
     gender: 'Masculino',
     phone: '(81) 99876-1122',
     email: 'lucas.albuquerque@email.com',
@@ -122,7 +151,7 @@ export const INITIAL_STUDENTS: Student[] = [
     registrationNumber: '2026-1003',
     name: 'Beatriz Martins de Souza',
     cpf: '987.654.321-00',
-    birthDate: '2010-11-05', // 15 anos (Menor de idade)
+    birthDate: '2010-11-05', // Aluna menor de 18 anos -> Exige Responsável (RN05)
     gender: 'Feminino',
     phone: '(81) 98112-3344',
     email: 'beatriz.martins@email.com',
@@ -146,6 +175,11 @@ export const INITIAL_STUDENTS: Student[] = [
   }
 ];
 
+/**
+ * 4. MATRÍCULAS EFETIVADAS (RF04 / RF07 / RN02):
+ * Registros de estudantes já vinculados a turmas para permitir
+ * a visualização imediata da listagem por turma (RF09) e emissão de comprovantes (RF07).
+ */
 export const INITIAL_ENROLLMENTS: Enrollment[] = [
   {
     id: 'enroll-1',

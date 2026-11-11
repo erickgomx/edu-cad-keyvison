@@ -1,3 +1,24 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/components/enrollment/EnrollmentModal.tsx
+ * 
+ * OBJETIVO:
+ * Modal para realização da Matrícula Escolar (RF04).
+ * 
+ * REGRAS DE NEGÓCIO VALIDADAS EM TEMPO REAL:
+ * - RN01: O aluno precisa possuir CPF válido perante a Receita Federal.
+ * - RN02: Um aluno só pode estar matriculado em UMA turma ativa por vez.
+ *         (Se já houver matrícula ativa, emite aviso explicativo e bloqueia).
+ * - RN03: Não permite matrículas que excedam a capacidade física máxima da turma.
+ * - RN05: Se menor de 18 anos, exige responsável legal cadastrado.
+ * - RN06: Confirmação apenas com preenchimento de todos os dados necessários.
+ * 
+ * FLUXO CONTÍNUO:
+ * Ao confirmar com sucesso, aciona automaticamente o modal do Comprovante (RF07).
+ * ============================================================================
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Student, Enrollment } from '../../types';
 import { useSchool } from '../../context/SchoolContext';
@@ -34,11 +55,16 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
     getClassById 
   } = useSchool();
 
+  // Estados dos seletores
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [searchStudent, setSearchStudent] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  /**
+   * Se o modal foi aberto clicando em "Matricular" a partir de um aluno específico,
+   * ele já vem pré-selecionado na lista.
+   */
   useEffect(() => {
     if (preSelectedStudent) {
       setSelectedStudentId(preSelectedStudent.id);
@@ -54,7 +80,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
   const currentStudent = students.find((s) => s.id === selectedStudentId);
   const currentClass = classes.find((c) => c.id === selectedClassId);
 
-  // Check RN02: Has existing active enrollment
+  // Verificação RN02: O aluno já possui matrícula ativa em outra turma?
   const existingActiveEnrollment = currentStudent 
     ? getActiveEnrollmentByStudent(currentStudent.id) 
     : undefined;
@@ -62,7 +88,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
     ? getClassById(existingActiveEnrollment.classRoomId) 
     : null;
 
-  // Check RN03: Class capacity
+  // Verificação RN03: A turma atingiu a lotação máxima de vagas?
   const currentClassEnrolled = currentClass 
     ? getClassEnrolledCount(currentClass.id) 
     : 0;
@@ -70,10 +96,13 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
     ? currentClassEnrolled >= currentClass.maxCapacity 
     : false;
 
-  // Check RN05: Minor requires guardian
+  // Verificação RN05: O aluno é menor de 18 anos e está sem responsável?
   const studentIsMinor = currentStudent ? isUnder18(currentStudent.birthDate) : false;
   const missingGuardian = studentIsMinor && (!currentStudent?.guardian || !currentStudent.guardian.cpf);
 
+  /**
+   * Submissão e validação estrita do formulário de matrícula
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -102,6 +131,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
       return;
     }
 
+    // Efetivação no Contexto Escolar
     const res = enrollStudent(selectedStudentId, selectedClassId);
     if (res.success && res.enrollment) {
       onEnrollmentSuccess?.(res.enrollment);
@@ -111,6 +141,9 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
     }
   };
 
+  /**
+   * Filtro de busca textual de alunos no select
+   */
   const filteredStudents = students.filter((s) => {
     const term = searchStudent.toLowerCase();
     return s.name.toLowerCase().includes(term) || s.cpf.includes(term) || s.registrationNumber.includes(term);
@@ -124,7 +157,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
     >
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8">
         
-        {/* Header */}
+        {/* Cabeçalho do Modal */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-brand-600 rounded-lg text-white">
@@ -148,9 +181,10 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
           </button>
         </div>
 
-        {/* Content Form */}
+        {/* Formulário de Matrícula */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           
+          {/* Mensagem de Erro / Alerta de Bloqueio */}
           {errorMessage && (
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -158,7 +192,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
             </div>
           )}
 
-          {/* Selecionar Aluno */}
+          {/* PASSO 1: SELECIONAR ALUNO */}
           <div>
             <label htmlFor="select-student" className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <User className="w-4 h-4 text-brand-600" />
@@ -198,7 +232,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
               })}
             </select>
 
-            {/* Aviso sobre RN02 caso aluno já esteja matriculado */}
+            {/* Alerta RN02: Aluno já possui matrícula em outra turma */}
             {existingActiveEnrollment && existingClass && (
               <div className="mt-2.5 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -210,7 +244,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
               </div>
             )}
 
-            {/* Aviso sobre RN05 caso menor sem responsável */}
+            {/* Alerta RN05: Menor sem responsável legal */}
             {missingGuardian && (
               <div className="mt-2.5 p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -222,7 +256,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
             )}
           </div>
 
-          {/* Selecionar Turma */}
+          {/* PASSO 2: SELECIONAR TURMA DE DESTINO */}
           <div>
             <label htmlFor="select-class" className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <BookOpen className="w-4 h-4 text-brand-600" />
@@ -252,7 +286,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
               })}
             </select>
 
-            {/* Status da turma selecionada */}
+            {/* Resumo da Turma Selecionada */}
             {currentClass && (
               <div className="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
                 <div className="flex items-center justify-between mb-1">
@@ -270,7 +304,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
             )}
           </div>
 
-          {/* Regras e Confirmação */}
+          {/* Resumo Pedagógico das Condições Atendidas */}
           <div className="p-3 bg-slate-100/70 rounded-xl text-[11px] text-slate-600 space-y-1">
             <p className="font-semibold text-slate-800">Condições da Matrícula:</p>
             <p>✓ CPF válido e auditado (RN01)</p>
@@ -279,7 +313,7 @@ export const EnrollmentModal: React.FC<EnrollmentModalProps> = ({
             <p>✓ Emissão automática de Comprovante em PDF após conclusão (RF07)</p>
           </div>
 
-          {/* Footer Actions */}
+          {/* Botões do Rodapé */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
             <button
               type="button"

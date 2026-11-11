@@ -1,3 +1,27 @@
+/**
+ * ============================================================================
+ * COMPONENTE: DashboardOverview (Painel Geral de Indicadores / Métricas)
+ * ============================================================================
+ * 
+ * Este componente fornece uma visão analítica e centralizada de toda a escola:
+ * 
+ * Principais responsabilidades:
+ * 1. Indicadores em Tempo Real (KPIs):
+ *    - Total de Alunos Cadastrados (RF01/RF05)
+ *    - Quantidade de Turmas ativas e vagas ofertadas (RF03)
+ *    - Matrículas ativas enturmadas (RF04)
+ *    - Taxa percentual de ocupação geral da escola (RN03)
+ * 2. Monitoramento de Vagas por Turma (RN03):
+ *    - Barras de progresso com alerta visual colorido:
+ *      * Verde: vagas confortáveis (< 70%)
+ *      * Âmbar: atenção / turma enchendo (>= 70%)
+ *      * Vermelho: turma lotada (100% da capacidade - RN03)
+ * 3. Feed de Últimas Matrículas Realizadas:
+ *    - Atalho direto para impressão do comprovante oficial em 1 clique (RF07)
+ * 4. Ações Rápidas (Atalhos):
+ *    - Permite cadastrar novo aluno, matricular ou criar turma sem navegar manualmente
+ */
+
 import React from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { 
@@ -28,6 +52,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onNewEnrollment,
   onViewReceipt
 }) => {
+  // Acessamos o estado global através do hook customizado useSchool
   const { 
     students, 
     classes, 
@@ -38,22 +63,30 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     getClassById 
   } = useSchool();
 
-  // Metrics
+  // ==========================================================================
+  // CÁLCULO DINÂMICO DE MÉTRICAS (KPIs)
+  // ==========================================================================
   const totalStudents = students.length;
   const totalClasses = classes.length;
   const activeEnrollments = enrollments.filter((e) => e.status === 'Ativa').length;
   
+  // Soma a capacidade total de todas as turmas cadastradas
   const totalCapacity = classes.reduce((acc, c) => acc + c.maxCapacity, 0);
+  
+  // Percentual geral de preenchimento de vagas na instituição
   const totalOccupancyPercentage = totalCapacity > 0 
     ? Math.round((activeEnrollments / totalCapacity) * 100) 
     : 0;
 
+  // Seleciona os 5 registros mais recentes de matrícula para o feed lateral
   const recentEnrollments = enrollments.slice(0, 5);
 
   return (
     <div className="space-y-8">
       
-      {/* Welcome Banner */}
+      {/* ====================================================================
+          BANNER DE BOAS-VINDAS & ATALHOS RÁPIDOS
+         ==================================================================== */}
       <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-brand-300 text-xs font-semibold mb-3 border border-white/10">
@@ -67,7 +100,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             Painel de controle unificado para cadastro escolar, gestão de turmas por turnos, validação de regras de negócio e emissão de comprovantes oficiais.
           </p>
 
-          {/* Quick Shortcuts */}
+          {/* Atalhos Rápidos visíveis apenas para perfil Secretaria/Admin */}
           {currentUser.role === 'admin' && (
             <div className="flex flex-wrap items-center gap-2.5 mt-5">
               <button
@@ -95,14 +128,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           )}
         </div>
 
-        {/* Decorative circle */}
+        {/* Efeito visual decorativo de iluminação no fundo */}
         <div className="absolute right-0 top-0 -mt-10 -mr-10 w-80 h-80 rounded-full bg-brand-500/10 blur-3xl pointer-events-none"></div>
       </div>
 
-      {/* KPI Cards */}
+      {/* ====================================================================
+          CARDS DE MÉTRICAS (KPIs)
+         ==================================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* Total Alunos */}
+        {/* Card 1: Total de Alunos */}
         <div 
           onClick={() => onNavigateTab('students')}
           className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-brand-300 hover:shadow-md transition-all cursor-pointer group"
@@ -123,7 +158,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </p>
         </div>
 
-        {/* Turmas */}
+        {/* Card 2: Total de Turmas & Capacidade */}
         <div 
           onClick={() => onNavigateTab('classes')}
           className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-brand-300 hover:shadow-md transition-all cursor-pointer group"
@@ -144,7 +179,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </p>
         </div>
 
-        {/* Matrículas Ativas */}
+        {/* Card 3: Matrículas Ativas */}
         <div 
           onClick={() => onNavigateTab('enrollments')}
           className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-brand-300 hover:shadow-md transition-all cursor-pointer group"
@@ -165,7 +200,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </p>
         </div>
 
-        {/* Taxa de Ocupação */}
+        {/* Card 4: Taxa de Ocupação Geral (RN03) */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase">Ocupação Geral</span>
@@ -187,10 +222,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
       </div>
 
-      {/* Two-column layout: Turmas em Destaque & Últimas Matrículas */}
+      {/* ====================================================================
+          SEÇÃO COMPARATIVA: OCUPAÇÃO DE TURMAS vs. ÚLTIMAS MATRÍCULAS
+         ==================================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Turmas & Ocupação (2 colunas) */}
+        {/* Painel Esquerdo: Monitoramento de Lotação das Turmas (RN03) */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
@@ -232,6 +269,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       </span>
                       {isFull && <span className="text-[10px] text-rose-600 font-bold">(LOTADA)</span>}
                     </div>
+                    {/* Barra de progresso visual de ocupação */}
                     <div className="w-full sm:w-36 h-2 bg-slate-200 rounded-full mt-1.5 overflow-hidden ml-auto">
                       <div 
                         className={`h-full rounded-full ${isFull ? 'bg-rose-500' : percentage > 70 ? 'bg-amber-500' : 'bg-emerald-500'}`}
@@ -245,7 +283,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
 
-        {/* Últimas Matrículas (1 coluna) */}
+        {/* Painel Direito: Feed de Matrículas Recentes com Impressão de Comprovante (RF07) */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
@@ -277,6 +315,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       {classRoom?.name || 'Turma'} • <span className="font-mono">{e.code}</span>
                     </p>
                   </div>
+                  {/* Botão rápido para gerar o comprovante oficial (RF07) */}
                   <button
                     onClick={() => onViewReceipt(e.id)}
                     className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer shrink-0"

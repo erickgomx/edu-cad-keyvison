@@ -1,3 +1,21 @@
+/**
+ * ============================================================================
+ * COMPONENTE: EnrollmentList (Painel de Gestão de Matrículas)
+ * ============================================================================
+ * 
+ * Este componente gerencia os seguintes Requisitos do Sistema:
+ * - RF04: Efetivar Matrícula e enturmação de alunos
+ * - RF07: Geração e visualização do Comprovante Oficial de Matrícula
+ * - RF10: Cancelamento de Matrícula com justificativa e liberação de vaga
+ * 
+ * Funcionalidades principais:
+ * 1. Tabela com listagem de todas as matrículas ativas e canceladas.
+ * 2. Busca dinâmica e instantânea por código autenticador, nome do aluno, CPF ou turma.
+ * 3. Filtros rápidos por estado da matrícula (Todas, Ativas, Canceladas).
+ * 4. Acesso em um clique ao comprovante oficial para impressão (RF07).
+ * 5. Diálogo modal de cancelamento de matrícula com registro opcional de motivo (RF10).
+ */
+
 import React, { useState } from 'react';
 import { useSchool } from '../../context/SchoolContext';
 import { 
@@ -19,6 +37,7 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
   onNewEnrollment,
   onViewReceipt
 }) => {
+  // Consumimos os dados e ações disponibilizados pelo SchoolContext
   const { 
     enrollments, 
     cancelEnrollment, 
@@ -27,19 +46,28 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
     currentUser 
   } = useSchool();
 
+  // Estados locais para filtragem da tabela e barra de pesquisa
   const [filterStatus, setFilterStatus] = useState<'all' | 'Ativa' | 'Cancelada'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Cancel dialog state
+  // Estados locais para controlar o modal de cancelamento (RF10)
   const [cancellingEnrollmentId, setCancellingEnrollmentId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
 
+  /**
+   * Filtragem combinada: status da matrícula + termo pesquisado.
+   * A busca examina simultaneamente o código da matrícula, o nome do aluno,
+   * o CPF do aluno e o nome da turma.
+   */
   const filteredEnrollments = enrollments.filter((enrollment) => {
+    // 1. Filtro por status
     if (filterStatus !== 'all' && enrollment.status !== filterStatus) return false;
 
+    // 2. Resolução dos relacionamentos (Aluno e Turma)
     const student = getStudentById(enrollment.studentId);
     const classRoom = getClassById(enrollment.classRoomId);
 
+    // 3. Termo de busca em minúsculas
     const term = searchTerm.toLowerCase();
     const matchCode = enrollment.code.toLowerCase().includes(term);
     const matchStudent = student?.name.toLowerCase().includes(term) || student?.cpf.includes(term);
@@ -48,6 +76,9 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
     return matchCode || matchStudent || matchClass;
   });
 
+  /**
+   * Confirma o cancelamento da matrícula e libera a vaga na turma correspondente (RF10)
+   */
   const handleConfirmCancel = () => {
     if (!cancellingEnrollmentId) return;
     cancelEnrollment(cancellingEnrollmentId, cancelReason);
@@ -58,7 +89,9 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
   return (
     <div className="space-y-6">
       
-      {/* Header */}
+      {/* ====================================================================
+          CABEÇALHO DA SEÇÃO DE MATRÍCULAS
+         ==================================================================== */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -69,6 +102,7 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
           </p>
         </div>
 
+        {/* Botão de Nova Matrícula (Exclusivo para perfil Administrador/Secretaria) */}
         {currentUser.role === 'admin' && (
           <button
             onClick={onNewEnrollment}
@@ -80,7 +114,9 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
         )}
       </div>
 
-      {/* Filter and Search Bar */}
+      {/* ====================================================================
+          BARRA DE PESQUISA E FILTROS RÁPIDOS DE STATUS
+         ==================================================================== */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -93,6 +129,7 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
           />
         </div>
 
+        {/* Chips de filtro por situação da matrícula */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={() => setFilterStatus('all')}
@@ -127,7 +164,9 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
         </div>
       </div>
 
-      {/* Table */}
+      {/* ====================================================================
+          TABELA DE MATRÍCULAS
+         ==================================================================== */}
       {filteredEnrollments.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
           <FileCheck className="w-10 h-10 text-slate-300 mx-auto mb-2" />
@@ -159,10 +198,12 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
                   return (
                     <tr key={enrollment.id} className="hover:bg-slate-50/70 transition-colors">
                       
+                      {/* Código Único Gerado */}
                       <td className="px-5 py-4 font-mono font-bold text-xs text-slate-800">
                         {enrollment.code}
                       </td>
 
+                      {/* Identificação do Aluno */}
                       <td className="px-5 py-4">
                         {student ? (
                           <div>
@@ -174,6 +215,7 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
                         )}
                       </td>
 
+                      {/* Identificação da Turma e Espaço */}
                       <td className="px-5 py-4">
                         {classRoom ? (
                           <div>
@@ -185,10 +227,12 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
                         )}
                       </td>
 
+                      {/* Data em que a matrícula foi efetivada */}
                       <td className="px-5 py-4 text-xs text-slate-600">
                         {new Date(enrollment.enrolledAt).toLocaleDateString('pt-BR')}
                       </td>
 
+                      {/* Status Visual: Ativa ou Cancelada */}
                       <td className="px-5 py-4">
                         {isCancelled ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
@@ -203,10 +247,11 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
                         )}
                       </td>
 
+                      {/* Botões de Ação */}
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           
-                          {/* Comprovante em PDF (RF07) */}
+                          {/* Visualizar Comprovante Oficial em PDF (RF07) */}
                           <button
                             onClick={() => onViewReceipt(enrollment.id)}
                             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
@@ -216,7 +261,7 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
                             <span>Comprovante</span>
                           </button>
 
-                          {/* Cancelar Matrícula (RF10) */}
+                          {/* Cancelar Matrícula (RF10 - restrito a administradores) */}
                           {!isCancelled && currentUser.role === 'admin' && (
                             <button
                               onClick={() => setCancellingEnrollmentId(enrollment.id)}
@@ -240,7 +285,9 @@ export const EnrollmentList: React.FC<EnrollmentListProps> = ({
         </div>
       )}
 
-      {/* Modal de Cancelamento de Matrícula (RF10) */}
+      {/* ====================================================================
+          MODAL DE CONFIRMAÇÃO DE CANCELAMENTO DE MATRÍCULA (RF10)
+         ==================================================================== */}
       {cancellingEnrollmentId && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs"

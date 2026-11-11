@@ -1,3 +1,18 @@
+/**
+ * ============================================================================
+ * EduCad - Sistema de Gestão e Cadastro Escolar
+ * ARQUIVO: src/context/SchoolContext.tsx
+ * 
+ * OBJETIVO:
+ * Coração do gerenciamento de estado e regras de negócio da aplicação (Front-End).
+ * Utiliza a API Context do React para prover:
+ * - Persistência reativa em LocalStorage (não requer banco de dados externo)
+ * - Autenticação por perfis de usuário (Secretaria, Professor, Aluno)
+ * - Validação estrita das Regras de Negócio (RN01 a RN06)
+ * - Fila de notificações acessíveis (Toasts)
+ * ============================================================================
+ */
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Student, 
@@ -20,6 +35,9 @@ import {
   generateEnrollmentCode 
 } from '../utils/validators';
 
+/**
+ * Contrato público de funções e estados expostos para os componentes
+ */
 interface SchoolContextType {
   students: Student[];
   classes: ClassRoom[];
@@ -28,21 +46,25 @@ interface SchoolContextType {
   users: User[];
   isAuthenticated: boolean;
   toasts: ToastMessage[];
+
+  // Autenticação e Perfis (RF08)
   login: (email: string, password?: string) => { success: boolean; error?: string };
   logout: () => void;
   registerUser: (userData: { name: string; email: string; password: string; role: UserRole }) => { success: boolean; error?: string; user?: User };
-  addToast: (type: ToastMessage['type'], title: string, description?: string) => void;
-  removeToast: (id: string) => void;
   setCurrentUser: (user: User) => void;
   switchRole: (role: UserRole) => void;
+
+  // Notificações flutuantes (Acessibilidade - ARIA live)
+  addToast: (type: ToastMessage['type'], title: string, description?: string) => void;
+  removeToast: (id: string) => void;
   
-  // Student operations
+  // Operações cadastrais de Aluno (RF01, RF02, RF05, RN01, RN04, RN05)
   addStudent: (studentData: Omit<Student, 'id' | 'registrationNumber' | 'createdAt'>) => { success: boolean; error?: string; student?: Student };
   updateStudent: (id: string, studentData: Partial<Student>) => { success: boolean; error?: string };
   deleteStudent: (id: string) => { success: boolean; error?: string };
   getStudentById: (id: string) => Student | undefined;
   
-  // Class operations
+  // Operações de Turmas (RF03, RF09, RN03)
   addClass: (classData: Omit<ClassRoom, 'id'>) => { success: boolean; error?: string };
   updateClass: (id: string, classData: Partial<ClassRoom>) => { success: boolean; error?: string };
   deleteClass: (id: string) => { success: boolean; error?: string };
@@ -50,18 +72,20 @@ interface SchoolContextType {
   getClassEnrolledCount: (classId: string) => number;
   getStudentsByClass: (classId: string) => Student[];
   
-  // Enrollment operations
+  // Operações de Matrícula e Comprovantes (RF04, RF07, RF10, RN02, RN03)
   enrollStudent: (studentId: string, classId: string) => { success: boolean; error?: string; enrollment?: Enrollment };
   cancelEnrollment: (enrollmentId: string, reason?: string) => { success: boolean; error?: string };
   getActiveEnrollmentByStudent: (studentId: string) => Enrollment | undefined;
   getEnrollmentReceiptData: (enrollmentId: string) => { enrollment: Enrollment; student: Student; classRoom: ClassRoom } | null;
   
-  // Reset demo data
+  // Ferramenta pedagógica para restauração da demonstração
   resetToDefaultData: () => void;
 }
 
+// Criação do contexto com valor inicial indefinido (será injetado pelo Provider)
 const SchoolContext = createContext<SchoolContextType | undefined>(undefined);
 
+// Chaves de armazenamento no LocalStorage do navegador
 const STORAGE_KEYS = {
   STUDENTS: 'educad_students_v1',
   CLASSES: 'educad_classes_v1',
@@ -71,37 +95,59 @@ const STORAGE_KEYS = {
 };
 
 export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load from LocalStorage or initialize with mock data
-  const [students, setStudents] = useState<Student[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.STUDENTS);
-    return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
-  });
-
-  const [classes, setClasses] = useState<ClassRoom[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CLASSES);
-    return saved ? JSON.parse(saved) : INITIAL_CLASSES;
-  });
-
-  const [enrollments, setEnrollments] = useState<Enrollment[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ENROLLMENTS);
-    return saved ? JSON.parse(saved) : INITIAL_ENROLLMENTS;
-  });
-
+  /**
+   * ESTADO 1: Usuários cadastrados (com persistência no LocalStorage)
+   * Se já houver dados salvos no navegador, carrega-os; caso contrário, usa o seed inicial.
+   */
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.USERS);
     return saved ? JSON.parse(saved) : INITIAL_USERS;
   });
 
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-    return saved ? JSON.parse(saved) : INITIAL_USERS[0]; // Default: Secretaria/Admin
+  /**
+   * ESTADO 2: Alunos cadastrados (Fichas escolares)
+   */
+  const [students, setStudents] = useState<Student[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.STUDENTS);
+    return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
   });
 
+  /**
+   * ESTADO 3: Turmas cadastradas com salas, turnos e vagas
+   */
+  const [classes, setClasses] = useState<ClassRoom[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CLASSES);
+    return saved ? JSON.parse(saved) : INITIAL_CLASSES;
+  });
+
+  /**
+   * ESTADO 4: Matrículas efetivadas e histórico de cancelamento
+   */
+  const [enrollments, setEnrollments] = useState<Enrollment[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ENROLLMENTS);
+    return saved ? JSON.parse(saved) : INITIAL_ENROLLMENTS;
+  });
+
+  /**
+   * ESTADO 5: Usuário atualmente ativo na sessão
+   */
+  const [currentUser, setCurrentUser] = useState<User>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+    return saved ? JSON.parse(saved) : INITIAL_USERS[0];
+  });
+
+  /**
+   * ESTADO 6: Controle de Autenticação da sessão
+   * Inicia sempre como `false` para que a tela inicial da aplicação seja a Tela de Login.
+   */
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
+  /**
+   * ESTADO 7: Fila de notificações dinâmicas (Toasts)
+   */
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Sync state to LocalStorage
+  // Sincronização automática com o LocalStorage a cada modificação nos estados
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
   }, [users]);
@@ -122,12 +168,14 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
   }, [currentUser]);
 
-  // Toast Notification helper
+  /**
+   * Dispara uma notificação visual flutuante (Toast)
+   * Auto-destrói a notificação após 4.5 segundos.
+   */
   const addToast = (type: ToastMessage['type'], title: string, description?: string) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, type, title, description }]);
 
-    // Auto-dismiss after 4.5s
     setTimeout(() => {
       removeToast(id);
     }, 4500);
@@ -137,13 +185,26 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  /**
+   * Alterna rapidamente o papel/perfil ativo da sessão para testes pedagógicos
+   */
   const switchRole = (role: UserRole) => {
     const targetUser = users.find((u) => u.role === role) || users[0];
     setCurrentUser(targetUser);
     addToast('info', 'Perfil alternado', `Você agora está visualizando o sistema como: ${targetUser.name} (${role.toUpperCase()})`);
   };
 
-  // Student CRUD operations
+  // ==========================================================================
+  // OPERAÇÕES CADASTRADAS DE ALUNOS (RF01, RF02, RF05, RN01, RN04, RN05)
+  // ==========================================================================
+
+  /**
+   * Cadastra um novo aluno no sistema
+   * Validações aplicadas:
+   * - RN01: CPF deve ser válido pelo algoritmo oficial
+   * - Não permite cadastro de CPF duplicado
+   * - RN05: Se menor de 18 anos, obrigatoriamente valida dados e CPF do Responsável
+   */
   const addStudent = (studentData: Omit<Student, 'id' | 'registrationNumber' | 'createdAt'>) => {
     // Validação RN01: CPF obrigatório e válido
     if (!studentData.cpf || !validateCPF(studentData.cpf)) {
@@ -159,7 +220,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: false, error: 'CPF já cadastrado.' };
     }
 
-    // Validação RN05: Menor de 18 anos exige responsável
+    // Validação RN05: Menor de 18 anos exige responsável cadastrado
     if (isUnder18(studentData.birthDate)) {
       if (!studentData.guardian || !studentData.guardian.name || !studentData.guardian.cpf) {
         addToast('error', 'Responsável Obrigatório', 'Alunos menores de 18 anos devem ter um responsável cadastrado (RN05).');
@@ -183,6 +244,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true, student: newStudent };
   };
 
+  /**
+   * Atualiza dados cadastrais de um estudante existente (RF05)
+   */
   const updateStudent = (id: string, updatedData: Partial<Student>) => {
     const existing = students.find((s) => s.id === id);
     if (!existing) {
@@ -190,7 +254,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: false, error: 'Aluno não encontrado.' };
     }
 
-    // Se CPF foi alterado, valida novamente
+    // Se o CPF foi alterado, valida o novo CPF
     if (updatedData.cpf && updatedData.cpf !== existing.cpf) {
       if (!validateCPF(updatedData.cpf)) {
         addToast('error', 'CPF Inválido', 'O novo CPF informado é inválido.');
@@ -198,7 +262,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     }
 
-    // Se a idade for menor de 18 anos, valida responsável
+    // Se a idade resultante for menor de 18 anos, valida responsável
     const targetBirthDate = updatedData.birthDate || existing.birthDate;
     if (isUnder18(targetBirthDate)) {
       const guardian = updatedData.guardian || existing.guardian;
@@ -215,8 +279,11 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true };
   };
 
+  /**
+   * Exclui o cadastro de um aluno (RF05 / RN04)
+   * Regra RN04: Apenas Secretaria / Admin tem permissão de exclusão.
+   */
   const deleteStudent = (id: string) => {
-    // RN04: Apenas o Administrador / Secretaria pode excluir cadastros
     if (currentUser.role !== 'admin') {
       addToast('error', 'Ação Não Permitida', 'Apenas a Secretaria / Administrador tem permissão para excluir cadastros (RN04).');
       return { success: false, error: 'Permissão negada.' };
@@ -225,7 +292,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const student = students.find((s) => s.id === id);
     if (!student) return { success: false, error: 'Aluno não encontrado.' };
 
-    // Cancela matrículas ativas vinculadas
+    // Cancela automaticamente matrículas ativas vinculadas a esse aluno
     setEnrollments((prev) =>
       prev.map((e) => (e.studentId === id && e.status === 'Ativa' ? { ...e, status: 'Cancelada', cancelReason: 'Exclusão do cadastro de aluno' } : e))
     );
@@ -237,7 +304,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const getStudentById = (id: string) => students.find((s) => s.id === id);
 
-  // Class operations
+  // ==========================================================================
+  // OPERAÇÕES DE TURMAS (RF03, RF09, RN03)
+  // ==========================================================================
+
+  /**
+   * Cadastra nova turma escolar com capacidade máxima (RF03 / RN03)
+   */
   const addClass = (classData: Omit<ClassRoom, 'id'>) => {
     if (!classData.name || !classData.academicYear || !classData.room || classData.maxCapacity <= 0) {
       addToast('error', 'Campos Inválidos', 'Preencha todos os campos da turma e capacidade superior a zero.');
@@ -260,6 +333,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true };
   };
 
+  /**
+   * Exclusão de turma (Apenas se não houver alunos matriculados ativos)
+   */
   const deleteClass = (id: string) => {
     if (currentUser.role !== 'admin') {
       addToast('error', 'Acesso Negado', 'Apenas a secretaria pode excluir turmas.');
@@ -279,10 +355,16 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const getClassById = (id: string) => classes.find((c) => c.id === id);
 
+  /**
+   * Calcula quantos alunos estão atualmente matriculados (ativos) em uma turma
+   */
   const getClassEnrolledCount = (classId: string) => {
     return enrollments.filter((e) => e.classRoomId === classId && e.status === 'Ativa').length;
   };
 
+  /**
+   * Retorna a lista de alunos de uma turma específica (RF09)
+   */
   const getStudentsByClass = (classId: string): Student[] => {
     const activeStudentIds = enrollments
       .filter((e) => e.classRoomId === classId && e.status === 'Ativa')
@@ -291,7 +373,18 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return students.filter((s) => activeStudentIds.includes(s.id));
   };
 
-  // Enrollment operations
+  // ==========================================================================
+  // OPERAÇÕES DE MATRÍCULA E COMPROVANTES (RF04, RF07, RF10, RN01, RN02, RN03)
+  // ==========================================================================
+
+  /**
+   * Realiza a matrícula do aluno em uma turma (RF04)
+   * Regras validadas:
+   * - RN01: O aluno precisa ter CPF válido
+   * - RN02: Um aluno só pode ter 1 matrícula ativa por vez
+   * - RN03: A turma não pode exceder a capacidade máxima
+   * - RN05: Se menor de 18 anos, deve ter responsável
+   */
   const enrollStudent = (studentId: string, classId: string) => {
     const student = getStudentById(studentId);
     const targetClass = getClassById(classId);
@@ -301,13 +394,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: false, error: 'Dados inválidos.' };
     }
 
-    // RN01: CPF Válido
+    // Validação RN01: CPF Válido
     if (!validateCPF(student.cpf)) {
       addToast('error', 'CPF Inválido (RN01)', 'O aluno não possui um CPF válido registrado.');
       return { success: false, error: 'CPF inválido.' };
     }
 
-    // RN02: Um aluno só pode estar matriculado em uma turma por vez
+    // Validação RN02: Um aluno só pode estar matriculado em uma turma por vez
     const existingActive = enrollments.find(
       (e) => e.studentId === studentId && e.status === 'Ativa'
     );
@@ -321,7 +414,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: false, error: 'Aluno já possui matrícula ativa.' };
     }
 
-    // RN03: Uma turma não pode ultrapassar sua capacidade máxima
+    // Validação RN03: Capacidade máxima da sala
     const currentEnrolled = getClassEnrolledCount(classId);
     if (currentEnrolled >= targetClass.maxCapacity) {
       addToast(
@@ -332,13 +425,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: false, error: 'Capacidade máxima atingida.' };
     }
 
-    // RN05: Menor de 18 deve ter responsável
+    // Validação RN05: Menor de 18 deve ter responsável
     if (isUnder18(student.birthDate) && (!student.guardian || !student.guardian.cpf)) {
       addToast('error', 'Responsável Pendente (RN05)', 'Menor de 18 anos requer responsável para ser matriculado.');
       return { success: false, error: 'Responsável não cadastrado.' };
     }
 
-    // Efetivação da Matrícula (RF04)
+    // Criação do Registro de Matrícula (RF04)
     const newEnrollment: Enrollment = {
       id: `enroll-${Date.now()}`,
       code: generateEnrollmentCode(),
@@ -358,8 +451,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true, enrollment: newEnrollment };
   };
 
+  /**
+   * Cancela uma matrícula existente liberando a vaga na turma (RF10)
+   */
   const cancelEnrollment = (enrollmentId: string, reason?: string) => {
-    // RF10: Cancelar Matrícula
     const enrollment = enrollments.find((e) => e.id === enrollmentId);
     if (!enrollment) return { success: false, error: 'Matrícula não encontrada.' };
 
@@ -386,6 +481,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return enrollments.find((e) => e.studentId === studentId && e.status === 'Ativa');
   };
 
+  /**
+   * Retorna os dados agrupados (Matrícula + Aluno + Turma) para montagem do Comprovante (RF07)
+   */
   const getEnrollmentReceiptData = (enrollmentId: string) => {
     const enrollment = enrollments.find((e) => e.id === enrollmentId);
     if (!enrollment) return null;
@@ -396,6 +494,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { enrollment, student, classRoom };
   };
 
+  // ==========================================================================
+  // AUTENTICAÇÃO E CADASTRO DE USUÁRIOS (RF08)
+  // ==========================================================================
+
+  /**
+   * Autentica o usuário com e-mail e senha
+   */
   const login = (email: string, password?: string) => {
     const cleanEmail = email.trim().toLowerCase();
     const foundUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
@@ -416,11 +521,17 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true };
   };
 
+  /**
+   * Encerra a sessão e retorna o usuário à tela de login inicial
+   */
   const logout = () => {
     setIsAuthenticated(false);
     addToast('info', 'Sessão Encerrada', 'Você saiu do sistema com segurança.');
   };
 
+  /**
+   * Registra um novo usuário no sistema com persistência local no LocalStorage
+   */
   const registerUser = (userData: { name: string; email: string; password: string; role: UserRole }) => {
     const cleanEmail = userData.email.trim().toLowerCase();
     
@@ -439,7 +550,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: false, error: 'Senha curta.' };
     }
 
-    // Check if email already registered
+    // Impede duplicidade de contas pelo mesmo e-mail
     const exists = users.some((u) => u.email.toLowerCase() === cleanEmail);
     if (exists) {
       addToast('error', 'E-mail Já Cadastrado', 'Já existe um usuário registrado com este e-mail.');
@@ -466,6 +577,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true, user: newUser };
   };
 
+  /**
+   * Restaura o sistema para os dados padrão iniciais de demonstração (Seed)
+   */
   const resetToDefaultData = () => {
     setStudents(INITIAL_STUDENTS);
     setClasses(INITIAL_CLASSES);
@@ -514,6 +628,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 };
 
+/**
+ * Hook customizado para consumir o contexto escolar de forma limpa e com verificação de escopo
+ */
 export const useSchool = () => {
   const context = useContext(SchoolContext);
   if (!context) {
