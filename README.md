@@ -7,6 +7,7 @@
 ## 🚀 Tecnologias Utilizadas
 
 - **React 18** + **TypeScript**
+- **Bootstrap 5** & **Bootstrap Icons** (Componentes e utilitários modernos de UI)
 - **Vite** (Build ultra-rápido atendendo ao RNF01 de carregamento instantâneo)
 - **Tailwind CSS** (Design system limpo, responsivo e moderno)
 - **Lucide Icons** (Ícones vetoriais SVG consistentes e acessíveis)
