@@ -26,6 +26,9 @@ O sistema inicia obrigatoriamente pela **Tela de Login**. Para testes rápidos o
 | **Professor** | `carlos.eduardo@educad.escola.br` | `prof` | Consulta de turmas, alunos matriculados e chamada |
 | **Aluno / Responsável** | `mariana.duarte@aluno.educad.br` | `aluno` | Acompanhamento cadastral e emissão de comprovante em PDF |
 
+### ✍️ Cadastro de Novos Usuários (Sem Banco de Dados)
+Na própria tela de login, clicando na aba **"Cadastre-se"**, qualquer pessoa pode criar uma nova conta informando Nome, E-mail, Senha e Perfil de Acesso desejado. O usuário é persistido no `localStorage` do navegador e já entra logado no sistema com as permissões daquele perfil.
+
 *(A qualquer momento, o usuário pode clicar em **Sair da Conta** na barra de navegação para retornar à tela de login).*
 
 ---

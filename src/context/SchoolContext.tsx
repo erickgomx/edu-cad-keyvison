@@ -30,6 +30,7 @@ interface SchoolContextType {
   toasts: ToastMessage[];
   login: (email: string, password?: string) => { success: boolean; error?: string };
   logout: () => void;
+  registerUser: (userData: { name: string; email: string; password: string; role: UserRole }) => { success: boolean; error?: string; user?: User };
   addToast: (type: ToastMessage['type'], title: string, description?: string) => void;
   removeToast: (id: string) => void;
   setCurrentUser: (user: User) => void;
@@ -86,7 +87,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return saved ? JSON.parse(saved) : INITIAL_ENROLLMENTS;
   });
 
-  const [users] = useState<User[]>(() => {
+  const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.USERS);
     return saved ? JSON.parse(saved) : INITIAL_USERS;
   });
@@ -101,6 +102,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Sync state to LocalStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  }, [users]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
   }, [students]);
@@ -416,10 +421,56 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addToast('info', 'Sessão Encerrada', 'Você saiu do sistema com segurança.');
   };
 
+  const registerUser = (userData: { name: string; email: string; password: string; role: UserRole }) => {
+    const cleanEmail = userData.email.trim().toLowerCase();
+    
+    if (!userData.name.trim()) {
+      addToast('error', 'Nome Obrigatório', 'Informe seu nome completo para se cadastrar.');
+      return { success: false, error: 'Nome obrigatório.' };
+    }
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      addToast('error', 'E-mail Inválido', 'Informe um endereço de e-mail válido.');
+      return { success: false, error: 'E-mail inválido.' };
+    }
+
+    if (!userData.password || userData.password.length < 3) {
+      addToast('error', 'Senha Curta', 'A senha deve conter no mínimo 3 caracteres.');
+      return { success: false, error: 'Senha curta.' };
+    }
+
+    // Check if email already registered
+    const exists = users.some((u) => u.email.toLowerCase() === cleanEmail);
+    if (exists) {
+      addToast('error', 'E-mail Já Cadastrado', 'Já existe um usuário registrado com este e-mail.');
+      return { success: false, error: 'E-mail já cadastrado.' };
+    }
+
+    const newUser: User = {
+      id: `user-${Date.now()}`,
+      name: userData.name.trim(),
+      email: cleanEmail,
+      password: userData.password,
+      role: userData.role,
+      avatar: userData.role === 'admin' 
+        ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80'
+        : userData.role === 'professor'
+        ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'
+    };
+
+    setUsers((prev) => [...prev, newUser]);
+    setCurrentUser(newUser);
+    setIsAuthenticated(true);
+    addToast('success', 'Conta Criada com Sucesso!', `Bem-vindo(a) ao EduCad, ${newUser.name}! Acesso configurado como ${newUser.role.toUpperCase()}.`);
+    return { success: true, user: newUser };
+  };
+
   const resetToDefaultData = () => {
     setStudents(INITIAL_STUDENTS);
     setClasses(INITIAL_CLASSES);
     setEnrollments(INITIAL_ENROLLMENTS);
+    setUsers(INITIAL_USERS);
     setCurrentUser(INITIAL_USERS[0]);
     addToast('info', 'Dados Restaurados', 'O sistema foi restaurado para os dados iniciais de demonstração.');
   };
@@ -436,6 +487,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         toasts,
         login,
         logout,
+        registerUser,
         addToast,
         removeToast,
         setCurrentUser,
