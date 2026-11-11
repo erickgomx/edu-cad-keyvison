@@ -16,6 +16,20 @@
 
 ---
 
+## 🔐 Tela Inicial de Login & Contas de Demonstração (RF08)
+
+O sistema inicia obrigatoriamente pela **Tela de Login**. Para testes rápidos ou avaliação do projeto, você pode digitar as credenciais ou clicar no botão de **Acesso Rápido em 1 Clique**:
+
+| Perfil | E-mail | Senha | Nível de Acesso |
+| :--- | :--- | :--- | :--- |
+| **Secretaria / Admin** | `secretaria@educad.escola.br` | `admin` | Acesso total: cadastro, turmas, matrículas e exclusões (RN04) |
+| **Professor** | `carlos.eduardo@educad.escola.br` | `prof` | Consulta de turmas, alunos matriculados e chamada |
+| **Aluno / Responsável** | `mariana.duarte@aluno.educad.br` | `aluno` | Acompanhamento cadastral e emissão de comprovante em PDF |
+
+*(A qualquer momento, o usuário pode clicar em **Sair da Conta** na barra de navegação para retornar à tela de login).*
+
+---
+
 ## 📋 Requisitos Implementados
 
 ### Requisitos Funcionais (RF)

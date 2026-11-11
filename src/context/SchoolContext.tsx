@@ -26,7 +26,10 @@ interface SchoolContextType {
   enrollments: Enrollment[];
   currentUser: User;
   users: User[];
+  isAuthenticated: boolean;
   toasts: ToastMessage[];
+  login: (email: string, password?: string) => { success: boolean; error?: string };
+  logout: () => void;
   addToast: (type: ToastMessage['type'], title: string, description?: string) => void;
   removeToast: (id: string) => void;
   setCurrentUser: (user: User) => void;
@@ -92,6 +95,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     return saved ? JSON.parse(saved) : INITIAL_USERS[0]; // Default: Secretaria/Admin
   });
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -386,6 +391,31 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { enrollment, student, classRoom };
   };
 
+  const login = (email: string, password?: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const foundUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (!foundUser) {
+      addToast('error', 'Usuário Não Encontrado', 'Verifique o e-mail informado ou use uma das contas de acesso rápido.');
+      return { success: false, error: 'E-mail não cadastrado.' };
+    }
+
+    if (password && foundUser.password && password !== foundUser.password) {
+      addToast('error', 'Senha Incorreta', 'A senha digitada está incorreta.');
+      return { success: false, error: 'Senha incorreta.' };
+    }
+
+    setCurrentUser(foundUser);
+    setIsAuthenticated(true);
+    addToast('success', `Bem-vindo(a), ${foundUser.name}!`, `Login efetuado com sucesso no perfil ${foundUser.role.toUpperCase()}.`);
+    return { success: true };
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    addToast('info', 'Sessão Encerrada', 'Você saiu do sistema com segurança.');
+  };
+
   const resetToDefaultData = () => {
     setStudents(INITIAL_STUDENTS);
     setClasses(INITIAL_CLASSES);
@@ -402,7 +432,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         enrollments,
         currentUser,
         users,
+        isAuthenticated,
         toasts,
+        login,
+        logout,
         addToast,
         removeToast,
         setCurrentUser,

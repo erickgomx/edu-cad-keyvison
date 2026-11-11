@@ -8,10 +8,11 @@ import {
   LayoutDashboard, 
   Shield, 
   RotateCcw, 
-  UserCircle,
-  Menu,
-  X,
-  ChevronDown
+  UserCircle, 
+  Menu, 
+  X, 
+  ChevronDown, 
+  LogOut 
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -21,7 +22,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => {
-  const { currentUser, switchRole, resetToDefaultData } = useSchool();
+  const { currentUser, switchRole, resetToDefaultData, logout } = useSchool();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
@@ -176,9 +177,29 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                     </div>
                     <span className="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">Aluno</span>
                   </button>
+
+                  <div className="pt-2 mt-1 border-t border-slate-100">
+                    <button
+                      onClick={() => { setRoleDropdownOpen(false); logout(); }}
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sair do Sistema (Logout)</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Direct Logout Button */}
+            <button
+              onClick={logout}
+              title="Sair do Sistema"
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+              aria-label="Sair do Sistema"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -249,7 +270,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
             })}
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex justify-end">
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                logout();
+              }}
+              className="text-xs text-rose-600 font-semibold hover:text-rose-800 flex items-center gap-1.5 py-1 px-2 rounded cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sair da Conta
+            </button>
             <button
               onClick={() => {
                 if (window.confirm('Restaurar dados de teste?')) {
@@ -257,7 +288,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab }) => 
                   setMobileMenuOpen(false);
                 }
               }}
-              className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1.5 py-1 px-2 rounded"
+              className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1.5 py-1 px-2 rounded cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Restaurar Dados Padrão

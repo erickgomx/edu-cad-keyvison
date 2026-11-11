@@ -5,6 +5,7 @@ export const INITIAL_USERS: User[] = [
     id: 'user-admin',
     name: 'Ana Cláudia (Secretaria)',
     email: 'secretaria@educad.escola.br',
+    password: 'admin',
     role: 'admin',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80'
   },
@@ -12,6 +13,7 @@ export const INITIAL_USERS: User[] = [
     id: 'user-prof',
     name: 'Prof. Carlos Eduardo',
     email: 'carlos.eduardo@educad.escola.br',
+    password: 'prof',
     role: 'professor',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
   },
@@ -19,6 +21,7 @@ export const INITIAL_USERS: User[] = [
     id: 'user-aluno',
     name: 'Mariana Duarte (Aluna)',
     email: 'mariana.duarte@aluno.educad.br',
+    password: 'aluno',
     role: 'aluno',
     studentId: 'student-1',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80'

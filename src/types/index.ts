@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  password?: string;
   avatar?: string;
   studentId?: string; // If role is aluno
 }

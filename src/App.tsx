@@ -12,11 +12,12 @@ import { ClassStudentsModal } from './components/classes/ClassStudentsModal';
 import { EnrollmentList } from './components/enrollment/EnrollmentList';
 import { EnrollmentModal } from './components/enrollment/EnrollmentModal';
 import { EnrollmentReceiptModal } from './components/enrollment/EnrollmentReceiptModal';
+import { LoginScreen } from './components/auth/LoginScreen';
 import { Student, ClassRoom, Enrollment } from './types';
 import { ShieldCheck, GraduationCap } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { getEnrollmentReceiptData } = useSchool();
+  const { getEnrollmentReceiptData, isAuthenticated } = useSchool();
   const [currentTab, setCurrentTab] = useState<'dashboard' | 'students' | 'classes' | 'enrollments'>('dashboard');
 
   // Modals state
@@ -86,6 +87,15 @@ export const App: React.FC = () => {
     // Open receipt right after successful enrollment
     handleOpenReceipt(enrollment.id);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <LoginScreen />
+        <ToastContainer />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
